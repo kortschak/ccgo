@@ -50,6 +50,7 @@ Command ccgo is a C compiler targeting Go.
                                 basenames
     --ccgo-go                   Do not remove the Go source file used to link the
                                 executable file and print its path
+    --ccgo-pkg-name             Set output Go file package name
 
 ### Installation
 
