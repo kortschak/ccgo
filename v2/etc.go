@@ -174,6 +174,9 @@ func todo(msg string, args ...interface{}) {
 
 func isFnPtr(t cc.Type, out *cc.Type) bool {
 	switch x := cc.UnderlyingType(t).(type) {
+	case *cc.FunctionType:
+		*out = x
+		return true
 	case *cc.PointerType:
 		if x.Item.Kind() == cc.Function {
 			if out != nil {

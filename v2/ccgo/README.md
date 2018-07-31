@@ -19,6 +19,8 @@ Command ccgo is a C compiler targeting Go.
     -D<macro>[=<val>]           Define a <macro> with <val> as its value.  If
                                 just <macro> is given, <val> is taken to be 1
     -E                          Preprocess only; do not compile, assemble or link
+    -ffreestanding              Do not assume that standard C libraries and
+                                "main" exist
     -fPIC                       Generate position-independent code if possible
     --help                      Display this information
     -g --gen-debug              generate debugging information (ignored)
@@ -51,6 +53,8 @@ Command ccgo is a C compiler targeting Go.
     --ccgo-go                   Do not remove the Go source file used to link the
                                 executable file and print its path
     --ccgo-pkg-name             Set output Go file package name
+    --ccgo-struct-checks        Generate code to verify struct/union sizes
+                                and field offsets.
 
 ### Installation
 

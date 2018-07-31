@@ -551,7 +551,7 @@ func (g *ngen) void(n *cc.Expr) {
 		}
 	case cc.ExprCast: // '(' TypeName ')' Expr
 		if isVaList(n.Expr.Operand.Type) { //TODO- ?
-			g.w("%sVA%s(", crt, g.typ(cc.UnderlyingType(n.TypeName.Type)))
+			g.w("%sVA%s(", g.crtPrefix, g.typ(cc.UnderlyingType(n.TypeName.Type)))
 			g.value(n.Expr, false)
 			g.w(")")
 			return
@@ -1553,7 +1553,7 @@ func (g *ngen) value(n *cc.Expr, packedField bool) {
 		t := n.TypeName.Type
 		op := n.Expr.Operand
 		if isVaList(op.Type) {
-			g.w("%sVA%s(", crt, g.typ(cc.UnderlyingType(t)))
+			g.w("%sVA%s(", g.crtPrefix, g.typ(cc.UnderlyingType(t)))
 			g.value(n.Expr, false)
 			g.w(")")
 			return
@@ -3157,7 +3157,7 @@ func (g *ngen) convert(n *cc.Expr, t cc.Type) {
 	}
 
 	if isVaList(n.Operand.Type) && !isVaList(t) {
-		g.w("%sVA%s(", crt, g.typ(cc.UnderlyingType(t)))
+		g.w("%sVA%s(", g.crtPrefix, g.typ(cc.UnderlyingType(t)))
 		g.value(n, false)
 		g.w(")")
 		return

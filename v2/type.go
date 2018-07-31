@@ -230,7 +230,7 @@ func (g *ngen) ptyp(t cc.Type, ptr2uintptr bool, lvl int) (r string) {
 		return fmt.Sprintf("[%d]%s", x.Size.Value.(*ir.Int64Value).Value, g.ptyp(x.Item, ptr2uintptr, lvl))
 	case *cc.FunctionType:
 		var buf bytes.Buffer
-		fmt.Fprintf(&buf, "func(%sTLS", crt)
+		fmt.Fprintf(&buf, "func(%sTLS", g.crtPrefix)
 		switch {
 		case len(x.Params) == 1 && x.Params[0].Kind() == cc.Void:
 			// nop

@@ -5,6 +5,8 @@
 // Package ccgo translates C99 ASTs to Go source code. Work In Progress. API unstable.
 package ccgo
 
+//TODO must respect 'volatile' -> use sync.Atomic
+
 import (
 	"bufio"
 	"bytes"
@@ -113,6 +115,7 @@ type gen struct { //TODO-
 }
 
 type ngen struct { //TODO rename to gen
+	crtPrefix          string
 	enqueued           map[interface{}]struct{}
 	err                error
 	file               string
@@ -137,7 +140,12 @@ type ngen struct { //TODO rename to gen
 }
 
 func newNGen(out io.Writer, in *cc.TranslationUnit, file string, tweaks *NewObjectTweaks) *ngen { //TODO rename to newGen
+	crtPrefix := crt
+	if tweaks.FreeStanding {
+		crtPrefix = ""
+	}
 	return &ngen{
+		crtPrefix:          crtPrefix,
 		enqueued:           map[interface{}]struct{}{},
 		file:               file,
 		helpers:            map[string]int{},
@@ -364,6 +372,10 @@ func (g *ngen) gen() (err error) {
 			g.err = err
 		}
 	}()
+
+	if g.crtPrefix == "" {
+		g.w("\nconst Lfreestanding = \"1\"\n")
+	}
 
 	for l := g.in.ExternalDeclarationList; l != nil; l = l.ExternalDeclarationList {
 		switch n := l.ExternalDeclaration; n.Case {

@@ -100,7 +100,9 @@ func NewSharedObject(out io.Writer, goos, goarch string, in io.Reader) (err erro
 
 // NewObjectTweaks amend NewObject behavior.
 type NewObjectTweaks struct {
-	FullTLDPaths bool
+	FreeStanding bool // -ffreestanding
+	FullTLDPaths bool // --ccgo-full-paths
+	StructChecks bool // --ccgo-struct-checks
 }
 
 // NewObject writes a linker object file produced from in that comes from file
@@ -175,6 +177,7 @@ func (u *unit) require(nm string) {
 // Linker produces Go files from object files.
 type Linker struct {
 	bss              int64
+	crtPrefix        string
 	definedExterns   map[string]string // name: type
 	ds               []byte
 	errs             scanner.ErrorList
@@ -219,6 +222,7 @@ func NewLinker(out io.Writer, goos, goarch string) (*Linker, error) {
 	}
 
 	r := &Linker{
+		crtPrefix:        crt,
 		definedExterns:   map[string]string{},
 		goarch:           goarch,
 		goos:             goos,
@@ -354,6 +358,8 @@ func (l *Linker) lConst(s string) { // x<name> = "value"
 		strings.HasPrefix(s, "soname "):
 
 		l.w("\nconst L%s\n", s)
+	case nm == "freestanding":
+		l.crtPrefix = ""
 	default:
 		todo("%s", s)
 		panic("unreachable")
@@ -515,14 +521,14 @@ func (l *Linker) close(header string) (err error) {
 var (
 `)
 	if l.bss != 0 {
-		l.w(`	bss     = crt.BSS(&bssInit[0])
-	bssInit [%d]byte`, l.bss)
+		l.w(`	bss     = %sBSS(&bssInit[0])
+	bssInit [%d]byte`, l.crtPrefix, l.bss)
 	}
 	if n := len(l.ds); n != 0 {
 		if n < 16 {
 			l.ds = append(l.ds, make([]byte, 16-n)...)
 		}
-		l.w("\n\tds = %sDS(dsInit)\n", crt)
+		l.w("\n\tds = %sDS(dsInit)\n", l.crtPrefix)
 		l.w("\tdsInit = []byte{")
 		if isTesting {
 			l.w("\n\t\t")
@@ -539,7 +545,7 @@ var (
 		l.w("}")
 	}
 	if l.ts != 0 {
-		l.w("\n\tts      = %sTS(\"", crt)
+		l.w("\n\tts      = %sTS(\"", l.crtPrefix)
 		for _, v := range l.text {
 			s := fmt.Sprintf("%q", dict.S(v))
 			l.w("%s\\x00", s[1:len(s)-1])
@@ -654,7 +660,7 @@ func (v *visitor) Visit(node ast.Node) ast.Visitor {
 		switch {
 		case strings.HasPrefix(nm, "X"):
 			if _, ok := v.definedExterns[nm]; !ok {
-				x.Name = fmt.Sprintf("%s%s", crt, nm)
+				x.Name = fmt.Sprintf("%s%s", v.crtPrefix, nm)
 			}
 		case strings.HasPrefix(nm, "C"): // Enum constant
 			x.Name = v.rename("C", nm[1:])

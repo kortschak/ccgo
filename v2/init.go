@@ -402,7 +402,7 @@ func (g *ngen) initializer(d *cc.Declarator) {
 		}
 		switch {
 		case g.escaped(d):
-			g.w("\n%sCopy(%s, %q, %d)", crt, g.mangleDeclarator(d), b, len(b))
+			g.w("\n%sCopy(%s, %q, %d)", g.crtPrefix, g.mangleDeclarator(d), b, len(b))
 		default:
 			g.w("\n%s = *(*%s)(unsafe.Pointer(%q))", g.mangleDeclarator(d), g.typ(d.Type), b)
 		}
@@ -1184,10 +1184,26 @@ func (g *ngen) renderInitializer(b []byte, t cc.Type, n *cc.Initializer) {
 		}
 
 		itemSz := g.model.Sizeof(x.Item)
+		if x.Item.Kind() == cc.Char && n.InitializerList.Len == 1 {
+			in := n.InitializerList.Initializer
+			if in.Expr != nil {
+				switch x := in.Expr.Operand.Value.(type) {
+				case *ir.StringValue:
+					copy(b, dict.S(int(x.StringID)))
+					return
+				}
+			}
+		}
+
 		var index int64
 		for l := n.InitializerList; l != nil; l = l.InitializerList {
-			if l.Designation != nil {
-				todo("", g.position(n))
+			if d := l.Designation; d != nil {
+				l := d.List
+				if len(l) != 1 {
+					todo("", g.position(n), l)
+				}
+
+				index = int64(l[0])
 			}
 			lo := index * itemSz
 			hi := lo + itemSz

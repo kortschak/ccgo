@@ -178,7 +178,7 @@ func (g *ngen) compoundStmt(n *cc.CompoundStmt, vars []*cc.Declarator, cases map
 		}
 	}
 	if malloc != 0 {
-		g.w("\nesc := %sMustMalloc(%d)", crt, malloc)
+		g.w("\nesc := %sMustMalloc(%d)", g.crtPrefix, malloc)
 	}
 	if len(vars)+len(escParams) != 0 {
 		localNames := map[int]struct{}{}
@@ -232,17 +232,17 @@ func (g *ngen) compoundStmt(n *cc.CompoundStmt, vars []*cc.Declarator, cases map
 	case alloca:
 		g.w("\ndefer func() {")
 		if malloc != 0 {
-			g.w("\n%sFree(esc)", crt)
+			g.w("\n%sFree(esc)", g.crtPrefix)
 		}
 		if alloca {
 			g.w(`
 for _, v := range allocs {
 	%sFree(v)
-}`, crt)
+}`, g.crtPrefix)
 		}
 		g.w("\n}()")
 	case malloc != 0:
-		g.w("\ndefer %sFree(esc)", crt)
+		g.w("\ndefer %sFree(esc)", g.crtPrefix)
 	}
 	for _, v := range escParams {
 		g.w("\n*(*%s)(unsafe.Pointer(%s)) = a%s", g.typ(v.Type), g.mangleDeclarator(v), dict.S(v.Name()))

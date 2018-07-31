@@ -232,7 +232,7 @@ func (g *ngen) defineTaggedStructType(t *cc.TaggedStructType) {
 	default:
 		g.producedStructTags[t.Tag] = struct{}{}
 		g.w("\ntype S%s = %s\n", dict.S(t.Tag), g.typ(t.Type))
-		if isTesting {
+		if g.tweaks.StructChecks || isTesting {
 			g.w("\n\nfunc init() {")
 			st := cc.UnderlyingType(t.Type).(*cc.StructType)
 			fields := st.Fields
@@ -285,7 +285,7 @@ func (g *ngen) defineTaggedUnionType(t *cc.TaggedUnionType) {
 
 	g.producedStructTags[t.Tag] = struct{}{}
 	g.w("\ntype U%s = %s\n", dict.S(t.Tag), g.typ(t.Type))
-	if isTesting {
+	if g.tweaks.StructChecks || isTesting {
 		g.w("\n\nfunc init() {")
 		g.w("\nif n := unsafe.Sizeof(U%s{}); n != %d { panic(n) }", dict.S(t.Tag), g.model.Sizeof(t))
 		g.w("\n}\n")
@@ -589,7 +589,7 @@ func (g *ngen) functionDefinition(n *cc.Declarator) {
 		g.w("\n\nconst Ld%s = %q", g.mangleDeclarator(n), n.Type)
 	}
 	g.w("\n\n// %s is defined at %v", g.mangleDeclarator(n), pos)
-	g.w("\nfunc %s(tls %sTLS", g.mangleDeclarator(n), crt)
+	g.w("\nfunc %s(tls %sTLS", g.mangleDeclarator(n), g.crtPrefix)
 	names := n.ParameterNames()
 	t := n.Type.(*cc.FunctionType)
 	if len(names) != len(t.Params) {
